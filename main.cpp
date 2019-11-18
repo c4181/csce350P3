@@ -26,91 +26,96 @@ void carryDigits(vector<int> &digits, int num) {
 void addPartialProducts(vector<int> a, vector<int> &c) {
   int carry = 0;
   vector<int> carry_vector;
-  padLeft(a, c.size() - a.size());
+  // Make both vectors the same length for addition
+  if (a.size() != c.size()) {
+    if (a.size() < c.size()) {
+      padLeft(a, c.size() - a.size());
+    } else {
+      padLeft(c, a.size() - c.size());
+    }
+  }
 
-  for (size_t i = c.size(); i > 0; --i) {
-    int temp = a.at(i - 1) + c.at(i - 1);
-
-    // Check for numbers to be carried
-    if (carry > 0) {
-      temp += carry;
+  for (int i = c.size() - 1; i >= 0; --i) {
+  // Check if need to carry
+  cout << "a is " << a.at(i) << endl;
+  cout << "c is " << c.at(i) << endl;
+  if ((a.at(i) + c.at(i) + carry) <= 9) {
+    // Just add the numbers
+    if (carry == 0) {
+      cout << "No Need to carry" << endl;
+      cout << c.at(i) << " + " << a.at(i) << " = ";
+      c.at(i) += a.at(i);
+      cout << c.at(i) << endl;
+    } else {
+      // Add the carry
+      cout << "Add the carry: " << carry << " to " << c.at(i) << " + " << a.at(i) << endl;
+      c.at(i) += a.at(i) + carry;
+      cout << "Answer: " << c.at(i) << endl;
       carry = 0;
       carry_vector.clear();
     }
-    if (temp > 9) {
-      carryDigits(carry_vector, temp);
-      carry = carry_vector.at(0);
-      c.at(i - 1) += carry_vector.at(1);
-    } else {
-      c.at(i - 1) += temp;
-    }
+  } else {
+    // Need to carry
+    carry_vector.clear();
+    carryDigits(carry_vector, a.at(i) + c.at(i) + carry);
+    cout << "Carry Vector Size: " << carry_vector.size() << endl;
+	  cout << "Adding a:" << a.at(i) << " + c:" << c.at(i) << " + carry:" << carry << endl;
+	  carry = carry_vector.at(0);
+	  c.at(i) = carry_vector.at(1);
+	  cout << "carry digit:" << carry << " result digit(c):" << c.at(i) << endl;
   }
+}
   if (carry > 0) {
     c.insert(c.begin(), carry);
-  } 
+  }
 }
 
-// TODO Helper function to add partial products
-// This function can't handle carrying in the addition
 vector<int> bruteForceMultiply(vector<int> a, vector<int> b) {
   int carry = 0;
+  int count = 0;
   vector<int> carry_vector;
   vector<int> c;
+  vector<int> partialProduct;
 
-  // Initalize c with all 0's
-  if (a.size() < b.size()) {
-    for (size_t i = 0; i < b.size(); ++i) {
-      c.push_back(0);
-    }
-  } else {
-    for (size_t i = 0; i < a.size(); ++i) {
-      c.push_back(0);
-    }
-  }
-
-  int count = 0;
-  for (int j = b.size() - 1 ; j >= 0; --j) {
+  for (vector<int>::reverse_iterator it_b = b.rbegin(); it_b != b.rend(); ++it_b) {
     cout << "***********OUTER LOOP **************" << endl;
-    carry_vector.clear();
-    vector<int>::reverse_iterator it = c.rbegin() + count;
-    for (int i = a.size() - 1; i >= 0; --i) {
-      cout << "Multiply " << a.at(i) << " * " << b.at(j) << endl;
-      int temp = a.at(i) * b.at(j);
+    cout << "Padding the partial product with " << count << " 0's" << endl;
+    padLeft(partialProduct, count);
+    for (vector<int>::reverse_iterator it_a = a.rbegin(); it_a != a.rend(); ++it_a) {
+      cout << "Multiply " << *it_a << " * " << *it_b << endl;
+      int temp = *it_a * *it_b;
       cout << "Answer: " << temp << endl;
-      // Check for numbers to be carried
+
+      // Check for carry
       if (carry > 0) {
         temp += carry;
         cout << "Adding the carry: " << carry << endl;
         carry = 0;
         carry_vector.clear();
       }
+      // Check if numbers need to be carried then add to the partial product
       if (temp > 9) {
         carryDigits(carry_vector, temp);
         carry = carry_vector.at(0);
         cout << "Carrying a " << carry << endl;
-        cout << "Adding " << carry_vector.at(1) << " to " << *it << endl;
-        *it += carry_vector.at(1);
-        cout << "Partial Product: " << *it << endl;
+        cout << "Adding " << carry_vector.at(1) << " to partial product" << endl;
+        partialProduct.insert(partialProduct.begin(), carry_vector.at(1));
       } else {
-        *it += temp;
-        cout << "Partial Product: " << *it << endl;
+        cout << "Adding " << temp << " to partial product" << endl;
+        partialProduct.insert(partialProduct.begin(), temp);
       }
-      ++it;
-      if (it == c.rend()) {
-        if (carry > 0) {
-          c.insert(c.begin(), carry);
-          carry = 0;
-        }
-      }
-      // DEBUG
-      cout << "C looks like: ";
-      for (size_t i = 0; i < c.size(); ++i) {
-        cout << c.at(i) << " ";
-      }
-      cout << endl;
-      cout << "i is " << i << endl;
-      cout << "j is " << j << endl;
     }
+    // Check for extra carry
+    if (carry > 0) {
+      cout << "Extra Cary: " << carry << " adding it to partial product" << endl;
+      partialProduct.insert(partialProduct.begin(), carry);
+      carry = 0;
+      carry_vector.clear();
+    }
+    // Add the partial product to the final answer c
+    cout << "**********ADDING THE PARTIAL PRODUCT***********" << endl;
+    addPartialProducts(partialProduct, c);
+    partialProduct.clear();
     ++count;
   }
   return c;
